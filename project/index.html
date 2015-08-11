@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width" />
+<title>Catalog, angular.js</title>
+<link href="css/font-awesome.min.css" rel="stylesheet">
+<link href="http://code.jquery.com/ui/1.11.4/themes/ui-darkness/jquery-ui.css" rel="stylesheet">
+<link href="css/catalog.css" rel="stylesheet">
+<!--[if lt IE 9]>
+<script src="js/html5.js" type="text/javascript"></script>
+<![endif]-->
+</head>
+<body>
+<div ng-app="catalogApp" id="main-container" ng-controller="catalogCtrl">
+	<section id="primary" class="content-area">
+		<div id="content" class="site-content" role="main">
+            <ul id="product-list" class="{{ viewStyle }}">
+                <li dir-paginate="product in products | filter:filtersService.byParams | filter:{title: searchTerm} | orderObjectBy:orderService.reverse | itemsPerPage: pageSize" current-page="currentPage" class="product-list-item-flexable">    
+                    <div class="product-preview">
+                        <img alt="" ng-src="{{ product.featured_image.attachment_meta.sizes.medium.url }}" width="250" >
+                    </div>
+                    <a href="{{ product.link }}" target="_blank" ng-bind-html="product.title" class="product-title"></a>
+                    <div class="product-price">
+                        Price: {{ product.meta['Price'][0] }} 
+                        <span ng-if="product.terms.product_colors">Color: {{ product.terms.product_colors[0].name }}</span>
+                        <span ng-if="product.terms.product_models" ng-class="{hidden: isFlexable()}">Model: {{ product.terms.product_models[0].name }}</span>
+                    </div>
+                    <article ng-bind-html="product.excerpt" ng-class="{hidden: isFlexable()}"></article>
+                </li>                
+            </ul>
+		</div><!-- #content -->
+	</section><!-- #primary -->
+    <div id="secondary">
+        <div id="menu-head" class="clearfix">
+            <div id="menu-filters">Filters</div>
+            <div id="toggle-menu-visibility"><i class="fa fa-chevron-left"></i></div>
+            <label id="menu-lines" ng-class="{grided: !isFlexable()}">
+                <i class="fa fa-th-list"></i>
+                <input type="radio" value="gridline" ng-model="viewStyle" class="hidden">
+            </label>
+            <label id="menu-grid" ng-class="{grided: isFlexable()}">
+                <i class="fa fa-th"></i>
+                <input type="radio" value="flexable" ng-model="viewStyle" class="hidden" checked>
+            </label>
+        </div>
+        <form class="clearfix">             
+            <div class="form-group">
+                Category    
+                <label><input type="radio" ng-model="filtersService.productType" value="" ng-change="setField()" ng-value="null" checked> All</label>
+                <label ng-repeat="product in productData.types"><input type="radio" ng-model="filtersService.productType" ng-value="product" ng-change="setField()"> {{ product.name }}</label>
+            </div>
+
+            <div class="form-group">
+                Price
+                <div id="price-range" class="clearfix">
+                    <input id="price-range_min" type="text" ng-model="filtersService.priceRange[0]" ng-change="setMinPrice()">
+                    <input id="price-range_max" type="text" ng-model="filtersService.priceRange[1]" ng-change="setMaxPrice()">
+                </div>
+                <div ng-model="filtersService.priceRange" use-decimals="" step="100" max="{{ maxPrice }}" min="0" ui-slider="slider.options"></div>
+            </div>
+
+            <div class="form-group" ng-if="showMoreOptions">
+                <div class="toggle-slidedown">Model <i class="fa fa-chevron-left"></i></div>
+                <div class="slidedown">
+                    <label ng-repeat="model in productData.models track by $index">
+                        <input type="checkbox" ng-checked="isThisChecked($index, 'models')" 
+                            ng-model="filtersService.models[$index]" 
+                            ng-true-value="{{ model.ID }}" 
+                            ng-false-value="null"> {{ model.name }}
+                    </label>
+                    <button ng-click="checkAll('models')">All</button>
+                </div>
+            </div>
+
+            <div class="form-group" ng-if="showMoreOptions">
+                <div class="toggle-slidedown">Color <i class="fa fa-chevron-left"></i></div>
+                <div class="slidedown">
+                    <label ng-repeat="color in productData.colors track by $index">
+                        <input type="checkbox" ng-checked="isThisChecked($index, 'colors')" 
+                            ng-model="filtersService.colors[$index]" 
+                            ng-true-value="{{ color.ID }}" 
+                            ng-false-value="null"> {{ color.name }}
+                    </label>
+                    <button ng-click="checkAll('colors')"> All</button>
+                </div>
+            </div>
+
+            <div class="form-group">
+                Order
+                <label><input type="radio" ng-model="orderService.reverse" ng-value="reverse[0]"> Descending</label>
+                <label><input type="radio" ng-model="orderService.reverse" ng-value="reverse[1]"> Ascending</label>
+            </div>     
+            
+            <div class="form-group">
+                <label for="pagesize">Items on page:</label>
+                <input id="pagesize" type="number" min="1" max="100" ng-model="pageSize">
+            </div>
+            <div class="form-group">
+                <label for="search">Search:</label>
+                <input ng-model="searchTerm" id="search" class="form-control" placeholder="">
+            </div>
+            <div class="form-group">
+                <dir-pagination-controls boundary-links="true" max-size="8" template-url="js/lib/dirPagination.tpl.html"></dir-pagination-controls>
+            </div>
+        </form>  
+    </div>
+</div>
+<div id="loading">
+    <div id="loader"></div>
+</div> 
+
+<script src="http://code.jquery.com/jquery-2.1.3.min.js"></script>
+<script src="http://code.jquery.com/ui/1.11.4/jquery-ui.min.js"></script>
+<script src='js/lib/angular1.3.4.min.js'></script>   
+<script src='js/lib/angular-sanitize.min.js'></script>   
+<script src='js/lib/angular-resource.min.js'></script>   
+<script src='js/lib/angular-ui-router.min.js'></script>   
+<script src='js/lib/angular-ui-slider.js'></script>      
+<script src='js/lib/angular-route.min.js'></script>     
+<script src='js/lib/dirPagination.js'></script>   
+<script src='js/catalogApp/app.js'></script>    
+<script src='js/catalogApp/controllers.js'></script>   
+<script src='js/catalogApp/services.js'></script>   
+<script src='js/catalogApp/filters.js'></script>   
+
+</body>
+</html>
